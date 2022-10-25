@@ -28,7 +28,6 @@ import androidx.core.view.isVisible
 import com.airbnb.mvrx.Success
 import com.airbnb.mvrx.fragmentViewModel
 import com.airbnb.mvrx.withState
-import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import dagger.hilt.android.AndroidEntryPoint
 import im.vector.app.R
 import im.vector.app.core.date.VectorDateFormatter
@@ -43,6 +42,7 @@ import im.vector.app.features.auth.ReAuthActivity
 import im.vector.app.features.crypto.recover.SetupMode
 import im.vector.app.features.settings.devices.v2.list.SessionInfoViewState
 import im.vector.app.features.settings.devices.v2.more.SessionLearnMoreBottomSheet
+import im.vector.app.features.settings.devices.v2.signout.BuildConfirmSignoutDialogUseCase
 import im.vector.app.features.workers.signout.SignOutUiWorker
 import org.matrix.android.sdk.api.auth.data.LoginFlowTypes
 import org.matrix.android.sdk.api.extensions.orFalse
@@ -66,6 +66,8 @@ class SessionOverviewFragment :
     @Inject lateinit var colorProvider: ColorProvider
 
     @Inject lateinit var stringProvider: StringProvider
+
+    @Inject lateinit var buildConfirmSignoutDialogUseCase: BuildConfirmSignoutDialogUseCase
 
     private val viewModel: SessionOverviewViewModel by fragmentViewModel()
 
@@ -132,13 +134,7 @@ class SessionOverviewFragment :
 
     private fun confirmSignoutOtherSession() {
         activity?.let {
-            MaterialAlertDialogBuilder(it)
-                    .setTitle(R.string.action_sign_out)
-                    .setMessage(R.string.action_sign_out_confirmation_simple)
-                    .setPositiveButton(R.string.action_sign_out) { _, _ ->
-                        signoutSession()
-                    }
-                    .setNegativeButton(R.string.action_cancel, null)
+            buildConfirmSignoutDialogUseCase.execute(it, this::signoutSession)
                     .show()
         }
     }
