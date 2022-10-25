@@ -56,6 +56,7 @@ import com.airbnb.mvrx.Fail
 import com.airbnb.mvrx.args
 import com.airbnb.mvrx.fragmentViewModel
 import com.airbnb.mvrx.withState
+import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import dagger.hilt.android.AndroidEntryPoint
 import im.vector.app.R
@@ -90,6 +91,7 @@ import im.vector.app.core.ui.views.JoinConferenceView
 import im.vector.app.core.ui.views.NotificationAreaView
 import im.vector.app.core.utils.Debouncer
 import im.vector.app.core.utils.DimensionConverter
+import im.vector.app.core.utils.ExpandingBottomSheetBehavior
 import im.vector.app.core.utils.KeyboardStateUtils
 import im.vector.app.core.utils.PERMISSIONS_FOR_WRITING_FILES
 import im.vector.app.core.utils.checkPermissions
@@ -414,6 +416,29 @@ class TimelineFragment :
         if (savedInstanceState == null) {
             handleSpaceShare()
         }
+
+        ExpandingBottomSheetBehavior.from(views.composerContainer)?.apply {
+            offsetContentViewBottom = true
+            drawBelowAppBar = true
+//            topOffset = 120
+            useScrimView = true
+        }
+
+//        val bottomSheetBehavior = BottomSheetBehavior.from(views.composerContainer)
+//        bottomSheetBehavior.addBottomSheetCallback(object : BottomSheetBehavior.BottomSheetCallback() {
+//
+//            private val messageComposerFragment: MessageComposerFragment by lazy {
+//                childFragmentManager.findFragmentById(R.id.composerContainer) as MessageComposerFragment
+//            }
+//
+//            override fun onStateChanged(bottomSheet: View, newState: Int) {}
+//
+//            override fun onSlide(bottomSheet: View, slideOffset: Float) {
+//                val newHeight = bottomSheetBehavior.peekHeight + (slideOffset * view.height).toInt()
+//                messageComposerFragment.resize(newHeight)
+//                println(newHeight)
+//            }
+//        })
     }
 
     private fun setupRemoveJitsiWidgetView() {

@@ -156,6 +156,13 @@ class MessageComposerFragment : VectorBaseFragment<FragmentComposerBinding>(), A
         GlideApp.with(this)
     }
 
+    fun resize(newSize: Int) {
+        val composerView = composer as View
+        val params = composerView.layoutParams
+        params.height = newSize
+        composerView.layoutParams = params
+    }
+
     private val isEmojiKeyboardVisible: Boolean
         get() = vectorPreferences.showEmojiKeyboard()
 
