@@ -110,9 +110,22 @@
         android:layout_height="wrap_content"
         android:nextFocusLeft="@id/composerEditText"
         android:nextFocusUp="@id/composerEditText"
+        android:gravity="top"
+        android:layout_marginVertical="10dp"
         tools:hint="@string/room_message_placeholder"
         tools:text="@tools:sample/lorem/random"
         tools:ignore="MissingConstraints" />
+
+    <ImageButton
+        android:id="@+id/composerFullScreenButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:layout_constraintTop_toTopOf="@id/composerEditTextOuterBorder"
+        app:layout_constraintEnd_toEndOf="@id/composerEditTextOuterBorder"
+        app:layout_constraintBottom_toBottomOf="@id/composerEditTextOuterBorder"
+        android:src="@drawable/ic_composer_full_screen"
+        android:background="?android:attr/selectableItemBackgroundBorderless"
+        android:contentDescription="@string/rich_text_editor_full_screen_toggle" />
 
     <ImageButton
         android:id="@+id/sendButton"

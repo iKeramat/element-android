@@ -316,7 +316,7 @@ class MessageComposerFragment : VectorBaseFragment<FragmentComposerBinding>(), A
             // Show keyboard when the user started a thread
             composerEditText.showKeyboard(andRequestFocus = true)
         }
-        composer.callback = object : PlainTextComposerLayout.Callback {
+        composer.callback = object : Callback {
             override fun onAddAttachment() {
                 if (vectorPreferences.isRichTextEditorEnabled()) {
                     AttachmentTypeSelectorBottomSheet.show(childFragmentManager)
@@ -357,6 +357,10 @@ class MessageComposerFragment : VectorBaseFragment<FragmentComposerBinding>(), A
 
             override fun onTextChanged(text: CharSequence) {
                 messageComposerViewModel.handle(MessageComposerAction.OnTextChanged(text))
+            }
+
+            override fun onFullScreenModeChanged(isFullScreen: Boolean) {
+                messageComposerViewModel.handle(MessageComposerAction.ToggleFullScreen)
             }
         }
     }

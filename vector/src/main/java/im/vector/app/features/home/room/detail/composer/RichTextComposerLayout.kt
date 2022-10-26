@@ -21,6 +21,7 @@ import android.text.Editable
 import android.text.TextWatcher
 import android.util.AttributeSet
 import android.view.LayoutInflater
+import android.view.MotionEvent
 import android.view.ViewGroup
 import android.widget.EditText
 import android.widget.ImageButton
@@ -56,11 +57,13 @@ class RichTextComposerLayout @JvmOverloads constructor(
 
     private val views: ComposerRichTextLayoutBinding
 
-    override var callback: PlainTextComposerLayout.Callback? = null
+    override var callback: Callback? = null
 
     private var currentConstraintSetId: Int = -1
 
     private val animationDuration = 100L
+
+    private var isFullScreen = false
 
     override val text: Editable?
         get() = views.composerEditText.text
@@ -74,6 +77,8 @@ class RichTextComposerLayout @JvmOverloads constructor(
         get() = views.sendButton
     override val attachmentButton: ImageButton
         get() = views.attachmentButton
+    override val fullScreenButton: ImageButton?
+        get() = views.composerFullScreenButton
     override val composerRelatedMessageActionIcon: ImageView
         get() = views.composerRelatedMessageActionIcon
     override val composerRelatedMessageAvatar: ImageView
@@ -110,6 +115,18 @@ class RichTextComposerLayout @JvmOverloads constructor(
             }
         })
 
+        views.composerEditText.setOnTouchListener { v, event ->
+            if (v.hasFocus()) {
+                v.parent?.requestDisallowInterceptTouchEvent(true)
+                val action = event.actionMasked
+                if (action == MotionEvent.ACTION_SCROLL) {
+                    v.parent?.requestDisallowInterceptTouchEvent(false)
+                    return@setOnTouchListener true
+                }
+            }
+            false
+        }
+
         views.composerRelatedMessageCloseButton.setOnClickListener {
             collapse()
             callback?.onCloseRelatedMessage()
@@ -122,6 +139,10 @@ class RichTextComposerLayout @JvmOverloads constructor(
 
         views.attachmentButton.setOnClickListener {
             callback?.onAddAttachment()
+        }
+
+        views.composerFullScreenButton.setOnClickListener {
+            callback?.onFullScreenModeChanged(!isFullScreen)
         }
 
         setupRichTextMenu()

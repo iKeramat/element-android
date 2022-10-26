@@ -18,11 +18,11 @@ import java.lang.ref.WeakReference
 import kotlin.math.max
 import kotlin.math.min
 
-class ExpandingBottomSheetBehavior<V: View> : CoordinatorLayout.Behavior<V> {
+class ExpandingBottomSheetBehavior<V : View> : CoordinatorLayout.Behavior<V> {
 
     companion object {
         @Suppress("UNCHECKED_CAST")
-        fun <V: View> from(view: V): ExpandingBottomSheetBehavior<V>? {
+        fun <V : View> from(view: V): ExpandingBottomSheetBehavior<V>? {
             val params = view.layoutParams as? CoordinatorLayout.LayoutParams ?: return null
             return params.behavior as? ExpandingBottomSheetBehavior<V>
         }
@@ -83,6 +83,8 @@ class ExpandingBottomSheetBehavior<V: View> : CoordinatorLayout.Behavior<V> {
         }
     private var needsContentViewOffsetUpdate = true
 
+    var bottomSheetContentId: Int? = null
+
     constructor(context: Context, attrs: AttributeSet?) : super(context, attrs)
     constructor() : super()
 
@@ -92,6 +94,7 @@ class ExpandingBottomSheetBehavior<V: View> : CoordinatorLayout.Behavior<V> {
         if (viewRef == null) {
             viewRef = WeakReference(child)
             setWindowInsetsListener(child)
+            child.isClickable = true
         }
 
         ensureViewDragHelper(parent)
@@ -101,8 +104,7 @@ class ExpandingBottomSheetBehavior<V: View> : CoordinatorLayout.Behavior<V> {
         parent.onLayoutChild(child, layoutDirection)
 
         if (state != State.Dragging && state != State.Settling) {
-            calculateCollapsedOffset(child)
-            child.invalidate()
+            calculateCollapsedOffset(child, parent.width)
         }
         calculateExpandedOffset(parent)
 
@@ -140,16 +142,22 @@ class ExpandingBottomSheetBehavior<V: View> : CoordinatorLayout.Behavior<V> {
             State.Collapsed -> {
                 println("CollapsedOffsetTopAndBottom | Offset: $collapsedOffset")
                 val params = child.layoutParams
-                params.height = parentHeight - collapsedOffset - insetTop
+                params.height = parentHeight - collapsedOffset
                 child.layoutParams = params
-                ViewCompat.offsetTopAndBottom(child, collapsedOffset)
+                ViewCompat.offsetTopAndBottom(child, collapsedOffset - insetTop)
             }
             State.Dragging, State.Settling -> {
                 val newOffset = savedTop - child.top
                 println("DraggingSettlingOffsetTopAndBottom | Offset: $newOffset")
+                val params = child.layoutParams
+                params.height = parentHeight - savedTop
+                child.layoutParams = params
                 ViewCompat.offsetTopAndBottom(child, newOffset)
             }
             State.Expanded -> {
+                val params = child.layoutParams
+                params.height = parentHeight - expandedOffset - insetTop
+                child.layoutParams = params
                 ViewCompat.offsetTopAndBottom(child, expandedOffset)
             }
         }
@@ -175,12 +183,15 @@ class ExpandingBottomSheetBehavior<V: View> : CoordinatorLayout.Behavior<V> {
             child: V,
             ev: MotionEvent
     ): Boolean {
+        if (bottomSheetContentId != null && child.id != bottomSheetContentId) {
+            return true
+        }
         val action = ev.actionMasked
 
         if (action == MotionEvent.ACTION_DOWN) {
             resetTouchEventTracking()
         }
-        if (velocityTracker == null ) {
+        if (velocityTracker == null) {
             velocityTracker = VelocityTracker.obtain()
         }
         velocityTracker?.addMovement(ev)
@@ -207,8 +218,8 @@ class ExpandingBottomSheetBehavior<V: View> : CoordinatorLayout.Behavior<V> {
                         touchingScrollingChild = true
                     }
                 }
-                ignoreEvents = (activePointerId == MotionEvent.INVALID_POINTER_ID
-                        && !parent.isPointInChildBounds(child, x, lastY))
+                ignoreEvents = (activePointerId == MotionEvent.INVALID_POINTER_ID &&
+                        !parent.isPointInChildBounds(child, x, lastY))
             }
             else -> Unit
         }
@@ -230,13 +241,13 @@ class ExpandingBottomSheetBehavior<V: View> : CoordinatorLayout.Behavior<V> {
         // it is not the top most view of its parent. This is not necessary when the touch event is
         // happening over the scrolling content as nested scrolling logic handles that case.
         val scroll = nestedScrollingChildRef?.get()
-        return (action == MotionEvent.ACTION_MOVE
-                && scroll != null
-                && !ignoreEvents
-                && state != State.Dragging
-                && !parent.isPointInChildBounds(scroll, ev.x.toInt(), ev.y.toInt())
-                && dragHelper != null
-                && Math.abs(lastY - ev.y.toInt()) > (dragHelper?.touchSlop ?: 0))
+        return (action == MotionEvent.ACTION_MOVE &&
+                scroll != null &&
+                !ignoreEvents &&
+                state != State.Dragging &&
+                !parent.isPointInChildBounds(scroll, ev.x.toInt(), ev.y.toInt()) &&
+                dragHelper != null &&
+                Math.abs(lastY - ev.y.toInt()) > (dragHelper?.touchSlop ?: 0))
     }
 
     override fun onTouchEvent(parent: CoordinatorLayout, child: V, ev: MotionEvent): Boolean {
@@ -280,22 +291,20 @@ class ExpandingBottomSheetBehavior<V: View> : CoordinatorLayout.Behavior<V> {
         dragHelper = null
     }
 
-    private fun calculateCollapsedOffset(child: View) {
-        val measuredWidth = child.measuredWidth
+    private fun calculateCollapsedOffset(child: View, parentWidth: Int) {
+//        val measuredWidth = child.measuredWidth
         val measuredHeight = child.measuredHeight
         child.measure(
-                MeasureSpec.UNSPECIFIED,
+                MeasureSpec.makeMeasureSpec(parentWidth, MeasureSpec.EXACTLY),
                 MeasureSpec.UNSPECIFIED,
         )
         collapsedOffset = parentHeight - child.measuredHeight
-        if (measuredWidth >= 0 && measuredHeight >= 0) {
-            child.measure(
-                    MeasureSpec.makeMeasureSpec(measuredWidth, MeasureSpec.EXACTLY),
-                    MeasureSpec.makeMeasureSpec(measuredHeight, MeasureSpec.EXACTLY),
-            )
-        }
-
-        println("CollapsedOffset: $collapsedOffset | Original measured height: $measuredHeight | Calculated measured height: ${child.measuredHeight} | insetTop: $insetTop")
+//        if (measuredWidth >= 0 && measuredHeight >= 0) {
+//            child.measure(
+//                    MeasureSpec.makeMeasureSpec(measuredWidth, MeasureSpec.EXACTLY),
+//                    MeasureSpec.makeMeasureSpec(measuredHeight, MeasureSpec.EXACTLY),
+//            )
+//        }
     }
 
     private fun calculateExpandedOffset(parent: CoordinatorLayout): Int {
@@ -303,7 +312,7 @@ class ExpandingBottomSheetBehavior<V: View> : CoordinatorLayout.Behavior<V> {
             findAppBarLayout(parent)?.measuredHeight ?: 0
         } else {
             0
-        } + topOffset + insetTop
+        } + topOffset
         return expandedOffset
     }
 
@@ -377,7 +386,7 @@ class ExpandingBottomSheetBehavior<V: View> : CoordinatorLayout.Behavior<V> {
     private fun getTopOffsetForState(state: State): Int {
         return when (state) {
             State.Collapsed -> collapsedOffset
-            State.Expanded -> expandedOffset
+            State.Expanded -> expandedOffset + insetTop
             else -> error("Cannot get offset for state $state")
         }
     }
@@ -387,7 +396,6 @@ class ExpandingBottomSheetBehavior<V: View> : CoordinatorLayout.Behavior<V> {
         velocityTracker?.recycle()
         velocityTracker = null
     }
-
 
     override fun onStartNestedScroll(
             coordinatorLayout: CoordinatorLayout,
@@ -471,8 +479,8 @@ class ExpandingBottomSheetBehavior<V: View> : CoordinatorLayout.Behavior<V> {
             velocityX: Float,
             velocityY: Float
     ): Boolean {
-        return target == nestedScrollingChildRef?.get()
-                && (state != State.Expanded || super.onNestedPreFling(coordinatorLayout, child, target, velocityX, velocityY))
+        return target == nestedScrollingChildRef?.get() &&
+                (state != State.Expanded || super.onNestedPreFling(coordinatorLayout, child, target, velocityX, velocityY))
     }
 
     private var insetBottom = 0
@@ -516,7 +524,6 @@ class ExpandingBottomSheetBehavior<V: View> : CoordinatorLayout.Behavior<V> {
                 override fun onViewDetachedFromWindow(v: View) = Unit
             })
         }
-
     }
 
     private val dragHelperCallback = object : ViewDragHelper.Callback() {
@@ -589,7 +596,7 @@ class ExpandingBottomSheetBehavior<V: View> : CoordinatorLayout.Behavior<V> {
                 // being greater than the Y velocity, settle to the nearest correct height.
 
                 val currentTop = releasedChild.top
-                if (currentTop < collapsedOffset/2) {
+                if (currentTop < collapsedOffset / 2) {
                     State.Expanded
                 } else {
                     State.Collapsed

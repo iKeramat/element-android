@@ -30,13 +30,14 @@ interface MessageComposerView {
     val emojiButton: ImageButton?
     val sendButton: ImageButton
     val attachmentButton: ImageButton
+    val fullScreenButton: ImageButton?
     val composerRelatedMessageTitle: TextView
     val composerRelatedMessageContent: TextView
     val composerRelatedMessageImage: ImageView
     val composerRelatedMessageActionIcon: ImageView
     val composerRelatedMessageAvatar: ImageView
 
-    var callback: PlainTextComposerLayout.Callback?
+    var callback: Callback?
 
     var isVisible: Boolean
 
@@ -46,4 +47,12 @@ interface MessageComposerView {
     fun replaceFormattedContent(text: CharSequence)
 
     fun setInvisible(isInvisible: Boolean)
+}
+
+interface Callback : ComposerEditText.Callback {
+    fun onCloseRelatedMessage()
+    fun onSendMessage(text: CharSequence)
+    fun onAddAttachment()
+    fun onExpandOrCompactChange()
+    fun onFullScreenModeChanged(isFullScreen: Boolean)
 }

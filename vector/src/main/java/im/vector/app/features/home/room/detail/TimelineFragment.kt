@@ -56,7 +56,6 @@ import com.airbnb.mvrx.Fail
 import com.airbnb.mvrx.args
 import com.airbnb.mvrx.fragmentViewModel
 import com.airbnb.mvrx.withState
-import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import dagger.hilt.android.AndroidEntryPoint
 import im.vector.app.R
@@ -185,7 +184,9 @@ import im.vector.app.features.widgets.WidgetArgs
 import im.vector.app.features.widgets.WidgetKind
 import im.vector.app.features.widgets.permissions.RoomWidgetPermissionBottomSheet
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -417,12 +418,34 @@ class TimelineFragment :
             handleSpaceShare()
         }
 
-        ExpandingBottomSheetBehavior.from(views.composerContainer)?.apply {
+        val bottomSheet = ExpandingBottomSheetBehavior.from(views.composerContainer)
+        bottomSheet?.apply {
             offsetContentViewBottom = true
             drawBelowAppBar = true
-//            topOffset = 120
+            topOffset = 120
             useScrimView = true
+            bottomSheetContentId = R.id.composerContainer
+            callback = object : ExpandingBottomSheetBehavior.Callback {
+                override fun onStateChanged(state: ExpandingBottomSheetBehavior.State) {
+//                    bottomSheet.isDraggable = state != ExpandingBottomSheetBehavior.State.Collapsed
+
+                    val setFullScreen = when (state) {
+                        ExpandingBottomSheetBehavior.State.Collapsed -> false
+                        ExpandingBottomSheetBehavior.State.Expanded -> true
+                        else -> return
+                    }
+                    messageComposerViewModel.handle(MessageComposerAction.SetFullScreen(setFullScreen))
+                }
+            }
         }
+
+        messageComposerViewModel.stateFlow.map { it.isFullScreen }
+                .distinctUntilChanged()
+                .onEach { isFullScreen ->
+                    val state = if (isFullScreen) ExpandingBottomSheetBehavior.State.Expanded else ExpandingBottomSheetBehavior.State.Collapsed
+                    bottomSheet?.setState(state)
+                }
+                .launchIn(viewLifecycleOwner.lifecycleScope)
 
 //        val bottomSheetBehavior = BottomSheetBehavior.from(views.composerContainer)
 //        bottomSheetBehavior.addBottomSheetCallback(object : BottomSheetBehavior.BottomSheetCallback() {

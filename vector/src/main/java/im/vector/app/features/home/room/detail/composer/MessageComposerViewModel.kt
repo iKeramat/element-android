@@ -122,6 +122,8 @@ class MessageComposerViewModel @AssistedInject constructor(
             is MessageComposerAction.AudioSeekBarMovedTo -> handleAudioSeekBarMovedTo(action)
             is MessageComposerAction.SlashCommandConfirmed -> handleSlashCommandConfirmed(action)
             is MessageComposerAction.InsertUserDisplayName -> handleInsertUserDisplayName(action)
+            MessageComposerAction.ToggleFullScreen -> handleToggleFullScreen()
+            is MessageComposerAction.SetFullScreen -> handleSetFullScreen(action)
         }
     }
 
@@ -161,6 +163,14 @@ class MessageComposerViewModel @AssistedInject constructor(
             val formatted = vectorPreferences.isRichTextEditorEnabled()
             setState { copy(sendMode = SendMode.Edit(timelineEvent, timelineEvent.getTextEditableContent(formatted))) }
         }
+    }
+
+    private fun handleToggleFullScreen() {
+        setState { copy(isFullScreen = !isFullScreen) }
+    }
+
+    private fun handleSetFullScreen(action: MessageComposerAction.SetFullScreen) {
+        setState { copy(isFullScreen = action.isFullScreen) }
     }
 
     private fun observePowerLevelAndEncryption() {

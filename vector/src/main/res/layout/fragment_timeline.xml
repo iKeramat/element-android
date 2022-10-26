@@ -215,11 +215,11 @@
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 
+
     <FrameLayout
         android:id="@+id/composerContainer"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:background="#44ff0000"
         app:layout_behavior="im.vector.app.core.utils.ExpandingBottomSheetBehavior" />
 
     <FrameLayout
@@ -229,5 +229,6 @@
         android:layout_gravity="bottom"
         android:visibility="visible"
         android:translationZ="10dp" />
+
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>
